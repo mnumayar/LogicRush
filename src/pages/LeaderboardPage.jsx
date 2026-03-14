@@ -13,7 +13,9 @@ export default function LeaderboardPage() {
   const navigate       = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const initialCat     = searchParams.get('cat') === 'logic' ? 'logic' : 'math'
+  const initialMode    = searchParams.get('lbMode') === 'practice' ? 'practice' : 'compete'
   const [category, setCategory] = useState(initialCat)
+  const [lbMode, setLbMode]     = useState(initialMode)
   const [rows, setRows]         = useState(null)
   const [error, setError]       = useState(false)
   const [username, setUsername] = useState('')
@@ -26,16 +28,18 @@ export default function LeaderboardPage() {
 
   async function load() {
     setError(false); setRows(null)
+    const view = lbMode === 'practice' ? 'practice_leaderboard' : 'leaderboard'
     const { data, error: err } = await supabase
-      .from('leaderboard').select('username, high_score, rank')
+      .from(view).select('username, high_score, rank')
       .eq('category', category).order('rank', { ascending: true }).limit(200)
     if (err) { setError(true); return }
     setRows(data ?? [])
   }
 
-  useEffect(() => { load() }, [category])
+  useEffect(() => { load() }, [category, lbMode])
 
-  function switchCat(cat) { setCategory(cat); setSearchParams({ cat }) }
+  function switchCat(cat) { setCategory(cat); setSearchParams({ cat, lbMode }) }
+  function switchMode(m) { setLbMode(m); setSearchParams({ cat: category, lbMode: m }) }
 
   const touchStartY = useRef(0)
   function handleTouchStart(e) { touchStartY.current = e.touches[0].clientY }
@@ -81,11 +85,42 @@ export default function LeaderboardPage() {
             </ArcadeButton>
             <div className="flex-1 text-center">
               <p className="font-pixel drop-shadow"
-                 style={{ fontSize: '0.7rem', color: '#fff', textShadow: '2px 2px 0 rgba(0,0,0,0.2)' }}>
-                🏆 LEADERBOARD
+                 style={{ fontSize: '0.6rem', color: '#fff', textShadow: '2px 2px 0 rgba(0,0,0,0.2)' }}>
+                {lbMode === 'practice' ? '📚 PRACTICE BOARD' : '🏆 LEADERBOARD'}
               </p>
             </div>
             <div style={{ width: 70 }} />
+          </motion.div>
+
+          {/* Mode toggle: Compete / Practice */}
+          <motion.div
+            className="game-panel flex p-1 mb-3"
+            style={{ gap: 6 }}
+            initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.08, type: 'spring', stiffness: 260, damping: 20 }}
+          >
+            {[
+              { key: 'compete',  label: '🏆 COMPETE' },
+              { key: 'practice', label: '📚 PRACTICE' },
+            ].map(({ key, label }) => (
+              <motion.button
+                key={key}
+                onClick={() => switchMode(key)}
+                className="flex-1 py-2 rounded-xl font-pixel"
+                whileHover={{ filter: 'brightness(1.07)' }}
+                whileTap={{ scale: 0.95 }}
+                style={
+                  lbMode === key
+                    ? { background: key === 'compete' ? '#E74C3C' : '#F5A623', color: '#fff',
+                        border: `3px solid ${key === 'compete' ? '#A93226' : '#C47D0E'}`,
+                        boxShadow: `0 3px 0 ${key === 'compete' ? '#A93226' : '#C47D0E'}`,
+                        fontSize: '0.45rem' }
+                    : { background: 'transparent', color: '#888', fontSize: '0.45rem' }
+                }
+              >
+                {label}
+              </motion.button>
+            ))}
           </motion.div>
 
           {/* Category tabs */}

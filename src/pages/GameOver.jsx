@@ -10,13 +10,16 @@ export default function GameOver() {
   const { state } = useLocation()
   const navigate  = useNavigate()
   const { user }  = useAuth()
-  const score     = state?.score    ?? 0
-  const category  = state?.category ?? 'math'
+  const score      = state?.score      ?? 0
+  const category   = state?.category   ?? 'math'
+  const isPractice = state?.isPractice ?? false
   const [saving, setSaving]             = useState(!!user)
   const [saveError, setSaveError]       = useState(false)
   const [personalBest, setPersonalBest] = useState(null)
   const [showBadge, setShowBadge]       = useState(false)
   const savedRef = useRef(false)
+
+  const scoreMode = isPractice ? 'practice' : 'compete'
 
   async function submitScore() {
     if (!user) return
@@ -27,8 +30,14 @@ export default function GameOver() {
         .eq('user_id', user.id).eq('category', category)
         .order('score', { ascending: false }).limit(1)
       const currentBest = bestData?.[0]?.score ?? 0
-      const { error } = await supabase.from('scores').insert({ user_id: user.id, category, score })
-      if (error) throw error
+
+      // Try inserting with mode column; fall back without it if column doesn't exist yet
+      let result = await supabase.from('scores').insert({ user_id: user.id, category, score, mode: scoreMode })
+      if (result.error?.code === '42703') {
+        result = await supabase.from('scores').insert({ user_id: user.id, category, score })
+      }
+      if (result.error) throw result.error
+
       const newBest = score > currentBest
       setPersonalBest(newBest ? score : currentBest)
       if (newBest) setTimeout(() => setShowBadge(true), 700)
@@ -66,12 +75,12 @@ export default function GameOver() {
             {/* GAME OVER text — its own pop */}
             <motion.p
               className="font-pixel"
-              style={{ fontSize: '0.8rem', color: '#E74C3C', textShadow: '2px 2px 0 rgba(0,0,0,0.12)' }}
+              style={{ fontSize: '0.8rem', color: isPractice ? '#73C140' : '#E74C3C', textShadow: '2px 2px 0 rgba(0,0,0,0.12)' }}
               initial={{ scale: 0, rotate: -10 }}
               animate={{ scale: 1, rotate: 0  }}
               transition={{ type: 'spring', stiffness: 350, damping: 16, delay: 0.25 }}
             >
-              GAME OVER
+              {isPractice ? 'PRACTICE DONE!' : 'GAME OVER'}
             </motion.p>
 
             {/* Score — fade up */}
@@ -81,7 +90,7 @@ export default function GameOver() {
               animate={{ opacity: 1, y: 0  }}
               transition={{ delay: 0.42, duration: 0.32 }}
             >
-              <p className="font-pixel mb-1" style={{ fontSize: '0.45rem', color: '#888' }}>YOUR SCORE</p>
+              <p className="font-pixel mb-1" style={{ fontSize: '0.45rem', color: '#888' }}>{isPractice ? 'CORRECT ANSWERS' : 'YOUR SCORE'}</p>
               <p
                 className="font-pixel score-shadow"
                 style={{ fontSize: '3.5rem', color: '#2c3e50', textShadow: '4px 4px 0 rgba(0,0,0,0.15)', lineHeight: 1 }}
@@ -144,54 +153,54 @@ export default function GameOver() {
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.55, type: 'spring', stiffness: 200, damping: 20 }}
             >
-              <p className="font-bold text-sm mb-3" style={{ color: '#2c3e50' }}>
-                Log in to save your score and compete on the leaderboard!
+              <p className="font-pixel mb-3" style={{ fontSize: '0.45rem', lineHeight: 2, color: '#2c3e50' }}>
+                {isPractice
+                  ? 'Log in to track your practice scores!'
+                  : 'Log in to save your score and compete on the leaderboard!'}
               </p>
               <ArcadeButton
                 onClick={() => navigate('/')}
-                style={{ background: '#4EC0CA', borderBottomColor: '#2A8A94' }}
+                style={{ background: '#4EC0CA', borderBottomColor: '#2A8A94', fontFamily: '"Press Start 2P", monospace', fontSize: '0.5rem' }}
                 className="text-white"
               >
-                Log In / Sign Up
+                LOG IN / SIGN UP
               </ArcadeButton>
             </motion.div>
           )}
 
-          {/* Action buttons — stagger in */}
-          {(!user || (!saving && !saveError)) && (
-            <motion.div
-              className="flex flex-col gap-3"
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0  }}
-              transition={{ delay: 0.65, type: 'spring', stiffness: 200, damping: 20 }}
+          {/* Action buttons — always visible */}
+          <motion.div
+            className="flex flex-col gap-3"
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0  }}
+            transition={{ delay: 0.65, type: 'spring', stiffness: 200, damping: 20 }}
+          >
+            <ArcadeButton
+              onClick={() => navigate(`/quiz/${category}${isPractice ? '?mode=practice' : ''}`, { replace: true })}
+              style={{ background: '#F5A623', borderBottomColor: '#C47D0E', fontFamily: '"Press Start 2P", monospace', fontSize: '0.55rem' }}
+              className="text-white"
             >
-              <ArcadeButton
-                onClick={() => navigate(`/quiz/${category}`, { replace: true })}
-                style={{ background: '#F5A623', borderBottomColor: '#C47D0E', fontSize: '1rem' }}
-                className="text-white"
+              {isPractice ? '📚 PRACTICE AGAIN' : '▶ PLAY AGAIN'}
+            </ArcadeButton>
+            <ArcadeButton
+              onClick={() => navigate('/play', { replace: true })}
+              style={{ background: '#4EC0CA', borderBottomColor: '#2A8A94', fontFamily: '"Press Start 2P", monospace', fontSize: '0.55rem' }}
+              className="text-white"
+            >
+              CHANGE MODE
+            </ArcadeButton>
+            {user && (
+              <motion.button
+                onClick={() => navigate(`/leaderboard?cat=${category}&lbMode=${isPractice ? 'practice' : 'compete'}`, { replace: true })}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="font-pixel py-2"
+                style={{ fontSize: '0.4rem', color: '#FFD166' }}
               >
-                ▶ PLAY AGAIN
-              </ArcadeButton>
-              <ArcadeButton
-                onClick={() => navigate('/play', { replace: true })}
-                style={{ background: '#4EC0CA', borderBottomColor: '#2A8A94' }}
-                className="text-white"
-              >
-                CHANGE MODE
-              </ArcadeButton>
-              {user && (
-                <motion.button
-                  onClick={() => navigate(`/leaderboard?cat=${category}`, { replace: true })}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="font-bold text-sm py-2"
-                  style={{ color: '#FFD166' }}
-                >
-                  View Leaderboard →
-                </motion.button>
-              )}
-            </motion.div>
-          )}
+                {isPractice ? 'View Practice Board →' : 'View Leaderboard →'}
+              </motion.button>
+            )}
+          </motion.div>
         </div>
       </div>
     </PageTransition>

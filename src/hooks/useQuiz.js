@@ -46,6 +46,12 @@ function quizReducer(state, action) {
         seenIds: newSeenIds,
       }
     }
+    case 'CONTINUE_PRACTICE':
+      return {
+        ...state,
+        status: 'active',
+        currentIndex: state.currentIndex + 1,
+      }
     case 'GAMEOVER':
       return { ...state, status: 'gameover' }
     case 'RESTART':

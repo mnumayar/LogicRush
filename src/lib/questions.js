@@ -14,6 +14,10 @@ export async function fetchQuestions(category, excludeIds = []) {
   const { data, error } = await query
   if (error) throw error
 
-  // Shuffle client-side
-  return data.sort(() => Math.random() - 0.5)
+  // Shuffle within each difficulty group, then order easy → medium → hard
+  const shuffle = (arr) => arr.sort(() => Math.random() - 0.5)
+  const easy = shuffle(data.filter((q) => q.difficulty === 'easy'))
+  const medium = shuffle(data.filter((q) => q.difficulty === 'medium'))
+  const hard = shuffle(data.filter((q) => q.difficulty === 'hard'))
+  return [...easy, ...medium, ...hard]
 }

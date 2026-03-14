@@ -25,7 +25,7 @@ function StatTile({ label, value }) {
   )
 }
 
-function ModeCard({ mode, stats, onPlay, onLeaderboard, delay }) {
+function ModeCard({ mode, stats, onPlay, onPractice, onLeaderboard, delay }) {
   const bestStreak = (() => {
     if (!stats?.allScores) return 0
     let max = 0, cur = 0
@@ -61,13 +61,22 @@ function ModeCard({ mode, stats, onPlay, onLeaderboard, delay }) {
         <StatTile label="🔥 Streak"  value={stats ? bestStreak : undefined} />
       </div>
 
-      <ArcadeButton
-        onClick={onPlay}
-        style={{ background: mode.color, borderBottomColor: mode.shadow, fontFamily: '"Press Start 2P", monospace', fontSize: '0.6rem' }}
-        className="text-white mb-2"
-      >
-        ▶ PLAY
-      </ArcadeButton>
+      <div className="flex gap-2 mb-2">
+        <ArcadeButton
+          onClick={onPlay}
+          style={{ background: mode.color, borderBottomColor: mode.shadow, fontFamily: '"Press Start 2P", monospace', fontSize: '0.5rem' }}
+          className="text-white flex-1"
+        >
+          ▶ COMPETE
+        </ArcadeButton>
+        <ArcadeButton
+          onClick={onPractice}
+          style={{ background: '#F5A623', borderBottomColor: '#C47D0E', fontFamily: '"Press Start 2P", monospace', fontSize: '0.5rem' }}
+          className="text-white flex-1"
+        >
+          📚 PRACTICE
+        </ArcadeButton>
+      </div>
       <motion.button
         onClick={onLeaderboard}
         whileHover={{ scale: 1.04 }}
@@ -178,6 +187,7 @@ export default function ModeSelect() {
                 stats={stats[mode.key]}
                 delay={0.2 + i * 0.12}
                 onPlay={() => navigate(`/quiz/${mode.key}`)}
+                onPractice={() => navigate(`/quiz/${mode.key}?mode=practice`)}
                 onLeaderboard={() => navigate(`/leaderboard?cat=${mode.key}`)}
               />
             ))}

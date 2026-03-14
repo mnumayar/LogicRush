@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { fetchQuestions } from '../lib/questions'
 import { useQuiz } from '../hooks/useQuiz'
@@ -43,7 +43,7 @@ function NetworkError({ onRetry }) {
   )
 }
 
-function ExplanationModal({ question, onSeeResults }) {
+function ExplanationModal({ question, onSeeResults, isPractice, onContinue }) {
   const choices = JSON.parse(
     typeof question.choices === 'string' ? question.choices : JSON.stringify(question.choices)
   )
@@ -68,7 +68,7 @@ function ExplanationModal({ question, onSeeResults }) {
           <p className="font-pixel" style={{ fontSize: '0.6rem', color: '#E74C3C' }}>WRONG!</p>
         </motion.div>
 
-        <p className="font-bold text-base mb-4 text-center leading-snug" style={{ color: '#2c3e50' }}>
+        <p className="font-pixel text-center leading-relaxed mb-4" style={{ fontSize: '0.55rem', color: '#2c3e50' }}>
           {question.prompt}
         </p>
 
@@ -82,8 +82,10 @@ function ExplanationModal({ question, onSeeResults }) {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + i * 0.06 }}
-                className="w-full py-3 px-4 rounded-2xl font-bold text-left"
+                className="w-full py-3 px-4 rounded-2xl font-pixel text-left"
                 style={{
+                  fontSize: '0.5rem',
+                  lineHeight: 1.8,
                   background: isCorrect ? '#E8F8E0' : isWrong ? '#FFF0F0' : '#F5F5F5',
                   border: `3px solid ${isCorrect ? '#73C140' : isWrong ? '#E74C3C' : '#DDD'}`,
                   color: isCorrect ? '#4A8C1C' : isWrong ? '#A93226' : '#888',
@@ -96,16 +98,26 @@ function ExplanationModal({ question, onSeeResults }) {
         </div>
 
         <div className="rounded-xl px-4 py-3 mb-5" style={{ background: '#FFF9E8', border: '2px solid #F5A623' }}>
-          <p className="font-bold text-sm" style={{ color: '#5B3A29' }}>{question.explanation}</p>
+          <p className="font-pixel" style={{ fontSize: '0.45rem', lineHeight: 2, color: '#5B3A29' }}>{question.explanation}</p>
         </div>
 
-        <ArcadeButton
-          onClick={onSeeResults}
-          style={{ background: '#F5A623', borderBottomColor: '#C47D0E', fontSize: '1rem' }}
-          className="text-white"
-        >
-          SEE RESULTS
-        </ArcadeButton>
+        {isPractice ? (
+          <ArcadeButton
+            onClick={onContinue}
+            style={{ background: '#73C140', borderBottomColor: '#4A8C1C', fontFamily: '"Press Start 2P", monospace', fontSize: '0.5rem' }}
+            className="text-white"
+          >
+            NEXT QUESTION →
+          </ArcadeButton>
+        ) : (
+          <ArcadeButton
+            onClick={onSeeResults}
+            style={{ background: '#F5A623', borderBottomColor: '#C47D0E', fontFamily: '"Press Start 2P", monospace', fontSize: '0.55rem' }}
+            className="text-white"
+          >
+            SEE RESULTS
+          </ArcadeButton>
+        )}
       </motion.div>
     </motion.div>
   )
@@ -114,6 +126,8 @@ function ExplanationModal({ question, onSeeResults }) {
 export default function Quiz() {
   const { category } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isPractice = searchParams.get('mode') === 'practice'
   const [state, dispatch] = useQuiz()
   const [loading, setLoading] = useState(true)
   const [networkError, setNetworkError] = useState(false)
@@ -202,12 +216,17 @@ export default function Quiz() {
 
   function handleSeeResults() {
     dispatch({ type: 'GAMEOVER' })
-    navigate('/gameover', { state: { score: state.score, category }, replace: true })
+    navigate('/gameover', { state: { score: state.score, category, isPractice }, replace: true })
+  }
+
+  function handleContinuePractice() {
+    dispatch({ type: 'CONTINUE_PRACTICE' })
+    setQuestionKey((k) => k + 1)
   }
 
   function handleQuitConfirm() {
     dispatch({ type: 'QUIT' })
-    navigate('/gameover', { state: { score: state.score, category }, replace: true })
+    navigate('/gameover', { state: { score: state.score, category, isPractice }, replace: true })
   }
 
   if (loading) return <SkeletonQuestion />
@@ -238,7 +257,7 @@ export default function Quiz() {
           <div className="pt-8 pb-3 px-4 flex items-center justify-between">
             <ArcadeButton
               onClick={() => setShowQuit(true)}
-              style={{ background: '#E74C3C', borderBottomColor: '#A93226', width: 'auto', padding: '8px 14px', fontSize: '0.8rem' }}
+              style={{ background: '#E74C3C', borderBottomColor: '#A93226', width: 'auto', padding: '8px 14px', fontFamily: '"Press Start 2P", monospace', fontSize: '0.55rem' }}
               className="text-white"
             >
               QUIT
@@ -258,7 +277,7 @@ export default function Quiz() {
                 {displayScore}
               </div>
               <div className="font-pixel mt-1" style={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em' }}>
-                {category === 'math' ? '🧮 MATH' : '🧠 LOGIC'}
+                {isPractice ? '📚 PRACTICE' : category === 'math' ? '🧮 MATH' : '🧠 LOGIC'}
               </div>
             </motion.div>
 
@@ -281,7 +300,7 @@ export default function Quiz() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
               >
-                <p className="font-bold text-lg text-center leading-snug" style={{ color: '#2c3e50' }}>
+                <p className="font-pixel text-center leading-relaxed" style={{ fontSize: '0.6rem', color: '#2c3e50' }}>
                   {question.prompt}
                 </p>
               </motion.div>
@@ -316,7 +335,7 @@ export default function Quiz() {
                       >
                         {LABELS[i]}
                       </span>
-                      <span className="font-bold leading-tight">{choice}</span>
+                      <span className="font-pixel leading-relaxed" style={{ fontSize: '0.5rem' }}>{choice}</span>
                     </motion.button>
                   )
                 })}
@@ -328,7 +347,12 @@ export default function Quiz() {
         {/* Explanation modal */}
         <AnimatePresence>
           {state.status === 'wrong' && state.lastWrongQuestion && (
-            <ExplanationModal question={state.lastWrongQuestion} onSeeResults={handleSeeResults} />
+            <ExplanationModal
+              question={state.lastWrongQuestion}
+              onSeeResults={handleSeeResults}
+              isPractice={isPractice}
+              onContinue={handleContinuePractice}
+            />
           )}
         </AnimatePresence>
 
@@ -348,12 +372,12 @@ export default function Quiz() {
                 transition={{ type: 'spring', stiffness: 320, damping: 22 }}
               >
                 <p className="font-pixel mb-2" style={{ fontSize: '0.65rem', color: '#2c3e50' }}>END RUN?</p>
-                <p className="font-bold text-sm mb-6" style={{ color: '#666' }}>
+                <p className="font-pixel mb-6" style={{ fontSize: '0.45rem', lineHeight: 2, color: '#666' }}>
                   Score of {state.score} will be submitted.
                 </p>
                 <div className="flex gap-3">
-                  <ArcadeButton onClick={() => setShowQuit(false)} style={{ background: '#73C140', borderBottomColor: '#4A8C1C' }} className="text-white flex-1">Resume</ArcadeButton>
-                  <ArcadeButton onClick={handleQuitConfirm} style={{ background: '#E74C3C', borderBottomColor: '#A93226' }} className="text-white flex-1">End</ArcadeButton>
+                  <ArcadeButton onClick={() => setShowQuit(false)} style={{ background: '#73C140', borderBottomColor: '#4A8C1C', fontFamily: '"Press Start 2P", monospace', fontSize: '0.5rem' }} className="text-white flex-1">Resume</ArcadeButton>
+                  <ArcadeButton onClick={handleQuitConfirm} style={{ background: '#E74C3C', borderBottomColor: '#A93226', fontFamily: '"Press Start 2P", monospace', fontSize: '0.5rem' }} className="text-white flex-1">End</ArcadeButton>
                 </div>
               </motion.div>
             </motion.div>
