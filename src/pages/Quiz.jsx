@@ -277,7 +277,7 @@ export default function Quiz() {
                 {displayScore}
               </div>
               <div className="font-pixel mt-1" style={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em' }}>
-                {isPractice ? '📚 PRACTICE' : category === 'math' ? '🧮 MATH' : '🧠 LOGIC'}
+                {isPractice ? '📚 PRACTICE' : '🧠 LOGIC'}
               </div>
             </motion.div>
 

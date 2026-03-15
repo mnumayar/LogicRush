@@ -7,7 +7,6 @@ import ArcadeButton from '../components/ArcadeButton'
 import PageTransition from '../components/PageTransition'
 
 const MODES = [
-  { key: 'math',  label: 'MATH',  emoji: '🧮', color: '#73C140', shadow: '#4A8C1C', bg: '#F0FBE8' },
   { key: 'logic', label: 'LOGIC', emoji: '🧠', color: '#9B59B6', shadow: '#6C3483', bg: '#F5EEF8' },
 ]
 
@@ -93,15 +92,15 @@ function ModeCard({ mode, stats, onPlay, onPractice, onLeaderboard, delay }) {
 export default function ModeSelect() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [stats, setStats] = useState({ math: null, logic: null })
+  const [stats, setStats] = useState({ logic: null })
 
   useEffect(() => {
     if (!user) {
-      setStats({ math: { count: 0, max: 0, avg: 0, allScores: [] }, logic: { count: 0, max: 0, avg: 0, allScores: [] } })
+      setStats({ logic: { count: 0, max: 0, avg: 0, allScores: [] } })
       return
     }
     async function loadStats() {
-      for (const cat of ['math', 'logic']) {
+      for (const cat of ['logic']) {
         const { data } = await supabase
           .from('scores').select('score').eq('user_id', user.id).eq('category', cat)
           .order('created_at', { ascending: true })

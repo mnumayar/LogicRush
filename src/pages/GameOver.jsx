@@ -11,7 +11,7 @@ export default function GameOver() {
   const navigate  = useNavigate()
   const { user }  = useAuth()
   const score      = state?.score      ?? 0
-  const category   = state?.category   ?? 'math'
+  const category   = state?.category   ?? 'logic'
   const isPractice = state?.isPractice ?? false
   const [saving, setSaving]             = useState(!!user)
   const [saveError, setSaveError]       = useState(false)

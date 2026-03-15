@@ -12,9 +12,9 @@ export default function LeaderboardPage() {
   const { user }       = useAuth()
   const navigate       = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const initialCat     = searchParams.get('cat') === 'logic' ? 'logic' : 'math'
+  const initialCat     = 'logic'
   const initialMode    = searchParams.get('lbMode') === 'practice' ? 'practice' : 'compete'
-  const [category, setCategory] = useState(initialCat)
+  const [category] = useState(initialCat)
   const [lbMode, setLbMode]     = useState(initialMode)
   const [rows, setRows]         = useState(null)
   const [error, setError]       = useState(false)
@@ -38,7 +38,6 @@ export default function LeaderboardPage() {
 
   useEffect(() => { load() }, [category, lbMode])
 
-  function switchCat(cat) { setCategory(cat); setSearchParams({ cat, lbMode }) }
   function switchMode(m) { setLbMode(m); setSearchParams({ cat: category, lbMode: m }) }
 
   const touchStartY = useRef(0)
@@ -123,33 +122,6 @@ export default function LeaderboardPage() {
             ))}
           </motion.div>
 
-          {/* Category tabs */}
-          <motion.div
-            className="game-panel flex p-1 mb-5"
-            style={{ gap: 6 }}
-            initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 20 }}
-          >
-            {['math', 'logic'].map((cat) => (
-              <motion.button
-                key={cat}
-                onClick={() => switchCat(cat)}
-                className="flex-1 py-2 rounded-xl font-bold text-sm"
-                whileHover={{ filter: 'brightness(1.07)' }}
-                whileTap={{ scale: 0.95 }}
-                style={
-                  category === cat
-                    ? { background: cat === 'math' ? '#73C140' : '#9B59B6', color: '#fff',
-                        border: `3px solid ${cat === 'math' ? '#4A8C1C' : '#6C3483'}`,
-                        boxShadow: `0 3px 0 ${cat === 'math' ? '#4A8C1C' : '#6C3483'}` }
-                    : { background: 'transparent', color: '#888' }
-                }
-              >
-                {cat === 'math' ? '🧮 Math' : '🧠 Logic'}
-              </motion.button>
-            ))}
-          </motion.div>
-
           {/* Error */}
           {error && (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -189,7 +161,7 @@ export default function LeaderboardPage() {
             >
               {/* Header row */}
               <div className="grid grid-cols-12 px-4 py-3"
-                   style={{ background: category === 'math' ? '#73C140' : '#9B59B6', borderRadius: '15px 15px 0 0' }}>
+                   style={{ background: '#9B59B6', borderRadius: '15px 15px 0 0' }}>
                 <span className="col-span-2 font-pixel text-white" style={{ fontSize: '0.5rem' }}>RANK</span>
                 <span className="col-span-7 font-pixel text-white" style={{ fontSize: '0.5rem' }}>PLAYER</span>
                 <span className="col-span-3 font-pixel text-white text-right" style={{ fontSize: '0.5rem' }}>SCORE</span>
